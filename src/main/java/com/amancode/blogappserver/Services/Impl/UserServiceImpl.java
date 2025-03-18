@@ -1,6 +1,8 @@
 package com.amancode.blogappserver.Services.Impl;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
@@ -11,12 +13,13 @@ import org.springframework.stereotype.Service;
 
 import com.amancode.blogappserver.Config.AppConstants;
 import com.amancode.blogappserver.Entities.*;
-import com.amancode.blogappserver.Payloads.PostDTO;
 import com.amancode.blogappserver.Payloads.UpdateUserImgDTO;
 import com.amancode.blogappserver.Payloads.UpdateUserInfoDTO;
 import com.amancode.blogappserver.Payloads.UserDTO;
 import com.amancode.blogappserver.Repositories.*;
 import com.amancode.blogappserver.Services.UserService;
+
+
 import com.amancode.blogappserver.Exceptions.*;
 
 @Service
@@ -34,12 +37,19 @@ public class UserServiceImpl implements UserService {
 	@Autowired
 	private RoleRepo roleRepo;
 
+	// private final EmailServiceImpl emailServiceImpl;
+
+	@Autowired
+	private EmailServiceImpl emailServiceImpl;
+
 	@Override
 	public UserDTO createUser(UserDTO userDTO) {
 		User user = this.dtoToUser(userDTO);
 		User savedUser = this.userRepo.save(user);
 		return this.userToDTO(savedUser);
 	}
+
+
 
 	// @Override
 	// public UserDTO updateUser(UserDTO userDTO, Integer userId) {
@@ -162,10 +172,30 @@ public class UserServiceImpl implements UserService {
 
 		user.getRoles().add(role);
 
+		String otp = generateOTP();
+		user.setOtp(otp);
+
 		User newUser = this.userRepo.save(user);
+		
+		sendVerificationEmail(newUser.getEmail(), otp);
 
 		return this.modelMapper.map(newUser, UserDTO.class);
 	}
+
+
+	
+	private String generateOTP(){
+		Random random = new Random(); 
+		int otpValue = 100000 + random.nextInt(900000);
+		return String.valueOf(otpValue);
+	}
+
+	private void sendVerificationEmail(String email, String otp){
+		String subject = "Email Verification";
+		String body = "Your verification opt is: "+otp;
+		emailServiceImpl.sendEmail(email, subject, body);
+	}
+
 
 	@Override
 	public UserDTO updateUserInfo(UpdateUserInfoDTO updateUserInfoDTO, Integer userId) {
@@ -190,6 +220,32 @@ public class UserServiceImpl implements UserService {
 		User updatedUser = this.userRepo.save(user);
 		return this.userToDTO(updatedUser);
 	}
+
+
+
+	@Override
+	public void verify(String email, String otp) {
+		// Use Optional to handle the possibility that no user is found
+		Optional<User> userOptional = userRepo.findByEmail(email);
+	
+		// Check if the user exists
+		User user = userOptional.orElseThrow(() -> new RuntimeException("User not found"));
+	
+		// Check if the user is already verified
+		if (user.isVerified()) {
+			throw new RuntimeException("User is already verified");
+		}
+	
+		// Verify OTP
+		if (otp.equals(user.getOtp())) {
+			user.setVerified(true);
+			userRepo.save(user); // Save the user after updating the verified status
+		} else {
+			throw new RuntimeException("Invalid OTP");
+		}
+	}
+	
+
 
 	
         // @Override

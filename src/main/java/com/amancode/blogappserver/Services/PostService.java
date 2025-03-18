@@ -1,10 +1,12 @@
 package com.amancode.blogappserver.Services;
 
 import java.util.List;
+import java.util.Map;
 
 import com.amancode.blogappserver.Entities.Category;
 import com.amancode.blogappserver.Payloads.PostDTO;
 import com.amancode.blogappserver.Payloads.PostResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 public interface PostService {
      
@@ -49,6 +51,8 @@ public interface PostService {
     List<PostDTO> getAllActivePostsWithLikes();
 
     int getTotalLikesOnActivePosts();
+
+    Map<String, Object> generateKeywords(String title) throws JsonProcessingException;
 
 
 }

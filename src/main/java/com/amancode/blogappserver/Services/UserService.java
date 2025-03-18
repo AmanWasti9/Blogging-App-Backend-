@@ -26,6 +26,9 @@ public interface UserService {
     //Delete 
     void deleteUser(Integer userId);
 
+    // Verification of email
+    void verify(String email, String otp);
+
     
     UserDTO updateUserInfo(UpdateUserInfoDTO updateUserInfoDTO, Integer userId);
 

@@ -35,6 +35,11 @@ public class UserDTO {
 
     private String imgName;
 
+    private String otp;
+
+    private boolean verified;
+
+
 
     private Set<RoleDTO> roles = new HashSet<>();
 

@@ -31,5 +31,8 @@ public class PostDTO {
     private UserDTO user;  
     
     private List<LikeDTO> likes;
+
+    // Keywords field
+    private List<String> keywords;
     
 }

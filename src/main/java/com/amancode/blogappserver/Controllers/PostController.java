@@ -28,6 +28,7 @@ import com.amancode.blogappserver.Payloads.PostDTO;
 import com.amancode.blogappserver.Payloads.PostResponse;
 import com.amancode.blogappserver.Services.FileService;
 import com.amancode.blogappserver.Services.PostService;
+import com.amancode.blogappserver.Services.Impl.OllamaService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -49,6 +50,14 @@ public class PostController {
 
     @Value("${project.image}")
     private String path;
+
+    private final OllamaService ollamaService;
+
+    public PostController(OllamaService ollamaService) {
+        this.ollamaService = ollamaService;
+    }
+
+
 
     // create - post
     @Operation(summary = "Create a post", description = "This is post api")
@@ -96,6 +105,8 @@ public class PostController {
 
         return ResponseEntity.ok(this.postService.getPostById(postId));
     }
+
+    
 
     // Get Posts By Category
     @GetMapping("/category/{categoryId}/posts")
@@ -204,4 +215,39 @@ public class PostController {
         return ResponseEntity.ok(totalLikes);
     }
 
+    // Generate Keyword from title by spring ai
+
+    // @PostMapping("/generate-keywords")        
+    // public ResponseEntity<Map<String, Object>> generateKeywords(
+    //     @RequestParam("title") String title
+    //     ){
+    //         Map<String, Object> result =  postService.generateKeywords(title);
+    //         return ResponseEntity.ok(result);
+    //     }
+    @PostMapping("/generate-keywords")
+    public ResponseEntity<?> generateKeywords(@RequestParam("title") String title) {
+        try {
+            Map<String, Object> result = postService.generateKeywords(title);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to generate keywords: " + e.getMessage()));
+        }
+    }
+
+
+
+    // Detect AI-generated text
+    @PostMapping("/check")
+    public Map<String, String> checkPostContent(@RequestBody String postContent) {
+        return ollamaService.checkAIContent(postContent);
+    }
+
+
+    @PostMapping("/chat/ask")
+    public ResponseEntity<?> chat(@RequestParam("userId") Integer userId, @RequestParam("message") String message) {
+        String response = ollamaService.chatWithAI(message, userId);
+        return ResponseEntity.ok(Map.of("response", response));
+    }
+   
 }

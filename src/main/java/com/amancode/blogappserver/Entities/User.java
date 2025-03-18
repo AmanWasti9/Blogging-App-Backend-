@@ -46,6 +46,11 @@ public class User implements UserDetails {
 
     private String imgName;
 
+    private String otp;
+
+    private boolean verified;
+
+
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Post> posts = new ArrayList<>();

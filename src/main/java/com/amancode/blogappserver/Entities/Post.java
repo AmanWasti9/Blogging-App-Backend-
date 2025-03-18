@@ -1,11 +1,14 @@
 package com.amancode.blogappserver.Entities;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -40,6 +43,8 @@ public class Post {
     private Date addedDate;
 
     private Boolean active = true;
+    
+    private List<String> keywords = new ArrayList<>();
 
     // @Column(name = "view_count", nullable = false)
     // private Integer viewCount = 0; 
@@ -59,5 +64,6 @@ public class Post {
 
     @OneToMany(mappedBy = "post",cascade = CascadeType.ALL)
     private Set<Save> save = new HashSet<>();
+    
     
 }

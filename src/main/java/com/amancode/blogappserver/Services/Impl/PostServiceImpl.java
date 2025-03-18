@@ -3,9 +3,11 @@ package com.amancode.blogappserver.Services.Impl;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
+import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -25,6 +27,10 @@ import com.amancode.blogappserver.Repositories.CategoryRepo;
 import com.amancode.blogappserver.Repositories.PostRepo;
 import com.amancode.blogappserver.Repositories.UserRepo;
 import com.amancode.blogappserver.Services.PostService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.io.JsonEOFException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class PostServiceImpl implements PostService {
@@ -41,6 +47,14 @@ public class PostServiceImpl implements PostService {
         @Autowired
         private CategoryRepo categoryRepo;
 
+        private final OllamaChatModel ollamaChatModel;
+
+        // Use Constructor Injection
+        @Autowired
+        public PostServiceImpl(OllamaChatModel ollamaChatModel) {
+                this.ollamaChatModel = ollamaChatModel;
+        }
+
         @Override
         public PostDTO createPost(PostDTO postDTO, Integer userId, Integer categoryId) {
 
@@ -56,6 +70,11 @@ public class PostServiceImpl implements PostService {
                 post.setAddedDate(new Date());
                 post.setUser(user);
                 post.setCategory(category);
+
+                // Save keywords if present
+                if (postDTO.getKeywords() != null) {
+                        post.setKeywords(postDTO.getKeywords());
+                }
 
                 Post newPost = this.postRepo.save(post);
 
@@ -77,6 +96,11 @@ public class PostServiceImpl implements PostService {
                 // post.setImageName(postDTO.getImageName());
                 post.setCategory(category);
                 post.setActive(postDTO.getActive());
+
+                // Update keywords if provided
+                if (postDTO.getKeywords() != null) {
+                        post.setKeywords(postDTO.getKeywords());
+                }
 
                 Post updatedPost = this.postRepo.save(post);
                 return this.modelMapper.map(updatedPost, PostDTO.class);
@@ -265,4 +289,61 @@ public class PostServiceImpl implements PostService {
                 return totalLikes;
         }
 
+        @Override
+        public Map<String, Object> generateKeywords(String title) throws JsonMappingException, JsonProcessingException {
+                
+                StringBuilder tempPrompt = new StringBuilder();
+                tempPrompt.append("You are an SEO expert. Generate SEO-friendly keywords for this blog title: ");
+                tempPrompt.append("\"").append(title).append("\". ");
+                tempPrompt.append("Return only a valid JSON object in this format: ");
+                tempPrompt.append("{\"keywords\": [\"keyword1\", \"keyword2\", \"keyword3\"]}");
+
+                String prompt=tempPrompt.toString();
+
+                // String content = ollamaChatModel.stream(prompt).blockLast();
+                // System.out.println(content);
+
+                // ObjectMapper ObjectMapper = new ObjectMapper();
+
+                // return (Map<String, Object>) ObjectMapper.readValue(content, Map.class);
+
+                // Log the raw content to see what response is coming
+
+                String content = null;
+                try {
+                        // content = ollamaChatModel.stream(prompt).toString();
+                        content = ollamaChatModel.call(prompt);
+                        System.out.println("Raw Response: " + content);
+
+                } catch (Exception e) {
+                        System.err.println("Error fetching response from model: " + e.getMessage());
+                }
+
+                // Parse the response using ObjectMapper
+                ObjectMapper objectMapper = new ObjectMapper();
+
+                // Check if content is not null or empty before parsing
+                if (content != null && !content.isEmpty()) {
+                        try {
+                                // Parse the content into a Map
+                                return objectMapper.readValue(content, Map.class);
+                        } catch (JsonProcessingException e) {
+                                System.err.println("Error parsing JSON response: " + e.getMessage());
+                                throw e; // rethrow after logging the error
+                        }
+                } else {
+                        System.err.println("Received an empty or null response from the model.");
+                        return null; // Return null or handle this case accordingly
+                }
+        }
+        
+      
 }
+
+
+// public String generateKeywords(String title) {
+// String prompt = "Generate relevant SEO-friendly keywords for the blog post
+// titled: \"" + title
+// + "\". Return the keywords as a comma-separated list.";
+// return ollamaChatClient.call(prompt).getResult().getOutput().getContent();
+// }

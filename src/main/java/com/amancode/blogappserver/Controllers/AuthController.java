@@ -1,5 +1,7 @@
 package com.amancode.blogappserver.Controllers;
 
+import java.util.Map;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -12,6 +14,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.amancode.blogappserver.Entities.User;
@@ -87,6 +90,20 @@ public class AuthController {
         UserDTO registerdUser = this.userService.regieterNewUser(userDTO);
         return new ResponseEntity<UserDTO>(registerdUser,HttpStatus.CREATED);
     }
+
+    @PostMapping("verify")
+    public ResponseEntity<?> verifyUser(@RequestBody Map<String, String> requestBody) {
+        String email = requestBody.get("email");
+        String otp = requestBody.get("otp");
+    
+        try {
+            userService.verify(email, otp);
+            return new ResponseEntity<>("User verified Successfully", HttpStatus.OK);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+    
 
 
 
